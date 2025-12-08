@@ -1,0 +1,54 @@
+# first-vela-app.yaml
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: first-vela-app
+spec:
+  components:
+    - name: express-server
+      type: webservice # webservice 是一个内置的组件类型
+      properties: # 组件参数
+        image: oamdev/hello-world
+        ports:
+          - port: 8000
+            expose: true
+      traits: # 组件运维特征
+        - type: scaler
+          properties:
+            replicas: 1
+  policies: # 定义阶段的内容
+    - name: target-default
+      type: topology # topology 是一个内置的应用策略类型，它可以将应用部署到多个目标
+      properties:
+        clusters: ["local"] # local 集群即 Kubevela 所在的集群
+        namespace: "default"
+        
+    - name: target-prod
+      type: topology
+      properties:
+        clusters: ["local"]
+        namespace: "prod" # 此命名空间需要在应用部署前完成创建
+        
+    - name: deploy-ha
+      type: override # override 是一个内置的应用策略类型，它可以覆盖组件的参数
+      properties:
+        components:
+          - type: webservice
+            traits:
+              - type: scaler
+                properties:
+                  replicas: 2 # 副本数调整为 2
+  workflow: # 应用工作流，一个个的阶段
+    steps:
+      - name: deploy2default
+        type: deploy # deploy 是一个内置的工作流类型，它可以将应用部署到指定的目标
+        properties:
+          policies: ["target-default"] # 执行 target-default 的 Step 阶段
+          
+      - name: manual-approval
+        type: suspend # suspend 是一个内置的工作流类型，它可以暂停工作流的执行(人工审查)
+        
+      - name: deploy2prod
+        type: deploy
+        properties:
+          policies: ["target-prod", "deploy-ha"]
