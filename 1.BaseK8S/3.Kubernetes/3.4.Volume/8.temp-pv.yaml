@@ -1,0 +1,20 @@
+# 8.temp-pv.yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-static-sts-temp-pv
+  labels:
+    type: nfs
+spec:
+  volumeMode: Filesystem # 文件系统
+  capacity:
+    storage: 10Gi # 存储容量
+  accessModes:
+    - ReadWriteOnce # 单节点读写
+    - ReadWriteMany # 多节点读写
+  persistentVolumeReclaimPolicy: Retain # 保留策略
+  storageClassName: nfs-sts-static # 手动创建则可以管理员自定义即可！
+  nfs:
+    path: "/var/nfs_share" # 挂载路径
+    server: 192.168.160.35 # NFS服务器IP
+    readOnly: false # 只读

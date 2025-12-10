@@ -1,0 +1,54 @@
+# 必须满足规则，不满足则不调度
+# 同一matchExpressions之间是and关系
+# 不同matchExpressions之间是or关系
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: disktype
+          operator: In
+          values:
+          - ssd
+          - hdd
+      - matchExpressions:
+        - key: environment
+          operator: NotIn
+          values: [staging, test]
+      - matchExpressions:
+        - key: environment
+          operator: Exists
+      - matchExpressions:
+        - key: environment
+          operator: DoesNotExist
+      - matchExpressions:
+        - key: memory
+          operator: Gt # 大于，Lt 小于
+          values:
+          - "16"
+
+      # 节点元数据
+      - matchFields:
+        - key: metadata.name # 节点的名称
+          operator: In
+          values:
+          - "node1"
+          - "node2"
+          - "node3"
+        - key: metadata.uid # 节点的uid
+          operator: In
+          values: ["uid-value"]
+        # 节点规格
+        - key: spec.unschedulable # 节点是否可调度
+          operator: NotIn
+          values:
+          - "true"
+        # 节点状态
+        - key: status.allocatable.cpu # 节点的可分配 cpu
+          operator: Gt
+          values:
+          - "4"
+        - key: status.allocatable.memory # 节点的可分配内存
+          operator: Gt
+          values:
+          - "8Gi"

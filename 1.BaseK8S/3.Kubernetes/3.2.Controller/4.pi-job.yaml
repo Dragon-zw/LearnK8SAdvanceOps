@@ -1,0 +1,25 @@
+# 4.pi-job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pi-job
+  namespace: default
+  labels:
+    app: pi-job
+spec:
+  completionMode: "Indexed" # 使用索引模式
+  completions: 5 # 完成度
+  parallelism: 2 # 并行度
+  ttlSecondsAfterFinished: 30 # 完成后保留时间，超过这个时间会自动删除
+  successPolicy: # 指定成功策略
+    rules:
+      - succeededCount: 3 # 指定成功数量
+        succeededIndexes: "0,1,2" # 指定成功索引
+  template:
+    spec:
+      containers:
+      - name: pi
+        image: perl:5.34.0
+        command: ["perl", "-Mbignum=bpi", "-wle", "print bpi(2000)"]
+      restartPolicy: Never # 对于 Job，此策略推荐设置为 Never 或者 OnFailure
+  backoffLimit: 4 # 设定失败重试次数

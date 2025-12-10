@@ -1,0 +1,63 @@
+# 9.my-app-pod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-app-pod-2
+  namespace: default
+  labels:
+    app: my-app
+    tier: backend
+    version: "1.0"
+  annotations:
+    description: "This is a sample application pod"
+    maintainer: "devops-team"
+spec:
+  # 重启策略
+  restartPolicy: Always
+  # Pod 亲和性
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: app
+            operator: In
+            values:
+            - my-app
+        topologyKey: "kubernetes.io/hostname" # 根据节点标签，表示亲和性规则作用于同一个节点上（即，如果满足条件，则调度到同一个节点）
+            
+  # 容器定义
+  containers:
+  - name: main-container
+    image: nginx
+    # 镜像的拉取策略
+    imagePullPolicy: IfNotPresent
+
+    # 容器的启动命令
+    command: ["nginx"]
+    args: ["-g", "daemon off;"]
+
+    # 容器的端口
+    ports:
+    - name: http
+      containerPort: 80 
+      protocol: TCP
+    - name: https
+      containerPort: 443
+      protocol: TCP
+    
+    # 环境变量
+    env:
+    - name: ENVIRONMENT
+      value: "production"
+    - name: LOG_LEVEL
+      value: "info"
+
+    # 资源限制(QoS)
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "256m"
+      limits:
+        memory: "128Mi"
+        cpu: "512m"

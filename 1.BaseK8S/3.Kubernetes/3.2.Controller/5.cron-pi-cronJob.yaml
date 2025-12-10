@@ -1,0 +1,24 @@
+# 5.cron-pi-cronJob.yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pi-cronjob
+  namespace: default
+  labels:
+    app: pi-cronjob
+spec:
+  schedule: "*/1 * * * *" # 每分钟执行一次
+  timeZone: "Asia/Shanghai" # 设置上海时区
+  concurrencyPolicy: Forbid # 禁止并发，确保任务不重复执行
+  startingDeadlineSeconds: 600 # 10分钟内必须启动，否则失败
+  successfulJobsHistoryLimit: 5 # 保留5个成功记录用于备份记录
+  failedJobsHistoryLimit: 3 # 保留3个失败记录用于排查调试
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: pi
+            image: perl:5.34.0 # 使用的镜像
+            command: ["perl", "-Mbignum=bpi", "-wle", "print bpi(2000)"]
+          restartPolicy: Never # 对于 Job，此策略推荐设置为 Never 或者 OnFailure

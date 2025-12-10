@@ -1,0 +1,12 @@
+# 6.task-pvc-volume
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: task-pvc-volume
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi

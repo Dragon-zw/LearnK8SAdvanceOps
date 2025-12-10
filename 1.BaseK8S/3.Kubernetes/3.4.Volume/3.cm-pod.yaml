@@ -1,0 +1,39 @@
+# 3.cm-pod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: configmap-env-pod
+spec:
+  containers:
+  - name: cm-container
+    image: nginx:1.18
+    imagePullPolicy: IfNotPresent
+    env:
+      # 直接使用单个环境变量
+      - name: APP_MODE
+        valueFrom:
+          configMapKeyRef:
+            name: app-config
+            key: mode
+    envFrom:
+      # 从整个 ConfigMap 中导入所有键值对作为环境变量
+      # 可定制化程度比较差
+      - configMapRef:
+          name: app-config
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: configmap-volume-pod
+spec:
+  containers:
+  - name: cm-container
+    image: nginx:1.18
+    imagePullPolicy: IfNotPresent
+    volumeMounts:
+    - name: config-volume
+      mountPath: /etc/config
+  volumes:
+  - name: config-volume
+    configMap:
+      name: app-config

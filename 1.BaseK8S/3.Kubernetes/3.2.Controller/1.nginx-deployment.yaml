@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  namespace: default
+  labels:
+    app: nginx
+spec:
+  replicas: 3 # 指定期望的 Pod 副本数量
+  selector:
+    matchLabels:
+      app: nginx # 选择器，用于匹配 Pod 的标签属于这个 Deployment
+  strategy:
+    type: RollingUpdate # 滚动更新策略
+    rollingUpdate:
+      maxSurge: 1 # 最大 surge(在更新过程中，最多可以穿件多少个超出期望副本数的 Pod)
+      maxUnavailable: 1 # 最大不可用(在更新过程中，最多有多少个 Pod 不可用)
+  template: # Pod 模版，定义了每个 Pod 长什么样
+    metadata:
+      labels:
+        app: nginx # 给 Pod 打上标签，必须与上面的 selector.matchLabels 对应
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest # 使用的镜像
+        ports:
+        - containerPort: 80

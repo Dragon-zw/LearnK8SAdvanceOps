@@ -1,0 +1,13 @@
+# 9.sc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sc-pv-claim
+spec:
+  storageClassName: "nfs-client"
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+      

@@ -1,0 +1,18 @@
+# 1.service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app-service
+  namespace: default
+  labels:
+    app: nginx
+spec:
+  type: ClusterIP # 可以省略，默认类型为 ClusterIP
+  selector:
+    app: nginx # 选择器，用于匹配 Pod 的标签属于这个 Service
+  ports:
+    - name: http # 端口名称
+      protocol: TCP # 协议类型
+      port: 80 # 服务端口
+      targetPort: 80 # Pod 端口
+  # clusterIP: 10.96.1.1 # 可以指定 ClusterIP，不指定则由系统自动分配

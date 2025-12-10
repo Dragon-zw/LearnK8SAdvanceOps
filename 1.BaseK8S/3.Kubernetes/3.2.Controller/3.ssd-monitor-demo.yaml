@@ -1,0 +1,23 @@
+# 3.ssd-monitor-demo.yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: ssd-monito
+  namespace: default
+  labels:
+    app: ssd-monitor
+spec:
+  selector:
+    matchLabels:
+      app: ssd-monitor
+  template:
+    metadata:
+      labels:
+        app: ssd-monitor
+    spec:
+      containers:
+      - name: ssd-monitor
+        image: nginx:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80

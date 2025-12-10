@@ -1,0 +1,31 @@
+# 2.web-statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: web
+  namespace: default
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  serviceName: my-app-headless-service
+  selector:
+    matchLabels:
+      app: nginx
+  podManagementPolicy: Parallel
+  updateStrategy:
+    type: OnDelete
+    # type: RollingUpdate # 或者 OnDelete
+    # rollingUpdate:
+    #   partition: 1 # 用于金丝雀发布，序号大于等于 partition 的 Pod 不会被更新
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.18
+          ports:
+            - containerPort: 80
+              name: web

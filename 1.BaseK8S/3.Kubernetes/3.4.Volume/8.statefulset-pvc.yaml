@@ -1,0 +1,56 @@
+# 8.statefulset-pvc.yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-static-sts-pv
+  labels:
+    type: nfs
+spec:
+  capacity:
+    storage: 5Gi # 存储容量
+  volumeMode: Filesystem # 文件系统
+  accessModes:
+    - ReadWriteOnce # 单节点读写
+    - ReadWriteMany  # 多节点读写
+  persistentVolumeReclaimPolicy: Retain # 保留策略
+  storageClassName: nfs-sts-static # 手动创建则可以管理员自定义即可！
+  nfs:
+    path: "/var/nfs_share" # 挂载路径
+    server: 192.168.160.35 # NFS服务器IP
+    readOnly: false # 只读
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: webapp
+  labels:
+    app: webapp
+spec:
+  # serviceName: "nfs-sts-static"
+  replicas: 2
+  selector:
+    matchLabels:
+      app: webapp
+  template:
+    metadata:
+      labels:
+        app: webapp
+    spec:
+      containers:
+      - name: webapp-container
+        image: nginx:1.18
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: nginx-data-volume
+          mountPath: /test
+  volumeClaimTemplates:
+  - metadata:
+      name: nginx-data-volume
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: "nfs-sts-static"
+      resources:
+        requests:
+          storage: 1Gi

@@ -1,0 +1,83 @@
+# 4.my-app-pod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-app-pod
+  namespace: default
+  labels:
+    app: my-app
+    tier: backend
+    version: "1.0"
+  annotations:
+    description: "This is a sample application pod"
+    maintainer: "devops-team"
+spec:
+  # 重启策略
+  restartPolicy: Always
+  # 节点选择器
+  nodeSelector:
+    kubernetes.io/hostname: "hkkck8smaster001"
+    # disktype: ssd
+
+  # 容器定义
+  containers:
+  - name: main-container
+    image: nginx
+    # 镜像的拉取策略
+    imagePullPolicy: IfNotPresent
+
+    # 容器的启动命令
+    command: ["nginx"]
+    args: ["-g", "daemon off;"]
+
+    # 容器的端口
+    ports:
+    - name: http
+      containerPort: 80 
+      protocol: TCP
+    - name: https
+      containerPort: 443
+      protocol: TCP
+    
+    # 环境变量
+    env:
+    - name: ENVIRONMENT
+      value: "production"
+    - name: LOG_LEVEL
+      value: "info"
+
+    # 资源限制(QoS)
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "256m"
+      limits:
+        memory: "128Mi"
+        cpu: "512m"
+    
+    # 健康检查
+    livenessProbe:
+      httpGet:
+        path: /
+        port: 80
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      successThreshold: 1
+      failureThreshold: 3
+    
+    # livenessProbe:
+    #   exec:
+    #     command:
+    #     - cat 
+    #     - /tmp/healthy
+
+    readinessProbe:
+      httpGet:
+        path: /
+        port: 80
+      initialDelaySeconds: 5
+      periodSeconds: 10
+      timeoutSeconds: 5
+      successThreshold: 1
+      failureThreshold: 3

@@ -1,0 +1,25 @@
+# 1.test-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: test-container
+          image: nginx:1.18
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+        - name: busybox
+          image: busybox:1.28.4
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c", "echo busybox && sleep 365d"]

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: busybox
+spec:
+  containers:
+  - name: busybox
+    image: busybox
+    command: ["/bin/sh"]
+    stdin: true # 相当于 Docker 的 -i 参数
+    tty: true   # 相当于 Docker 的 -t 参数

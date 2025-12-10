@@ -1,0 +1,60 @@
+# 7.deployment-volume.yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-static-pv
+  labels:
+    type: nfs
+spec:
+  capacity:
+    storage: 5Gi # 存储容量
+  volumeMode: Filesystem # 文件系统
+  accessModes:
+    - ReadWriteOnce # 单节点读写
+    - ReadWriteMany  # 多节点读写
+  persistentVolumeReclaimPolicy: Retain # 保留策略
+  storageClassName: nfs-static # 手动创建则可以管理员自定义即可！
+  nfs:
+    path: "/var/nfs_share" # 挂载路径
+    server: 192.168.160.35 # NFS服务器IP
+    readOnly: false # 只读
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs-static-pvc
+spec:
+  storageClassName: nfs-static
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webapp
+  template:
+    metadata:
+      labels:
+        app: webapp
+    spec:
+      containers:
+      - name: webapp-container
+        image: nginx:1.18
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: nginx-data-volume
+          mountPath: /test
+      volumes:
+      - name: nginx-data-volume
+        persistentVolumeClaim:
+          claimName: nfs-static-pvc

@@ -1,0 +1,33 @@
+# 1.test-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: test-container
+          image: nginx:1.18
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: cache-volume
+              mountPath: /cache
+            - name: hostpath-volume
+              mountPath: /hostpath
+          ports:
+            - containerPort: 80
+      volumes:
+        - name: cache-volume
+          emptyDir: {} # 临时存储，Pod 被删除时，数据也会被删除
+        - name: hostpath-volume
+          hostPath:
+            path: /data # 节点上的目录
+            type: DirectoryOrCreate # 目录不存在时，自动创建

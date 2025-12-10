@@ -1,0 +1,10 @@
+affinity:
+  podAffinity: # 亲和性，podAntiAffinity: # 反亲和性
+    requiredDuringSchedulingIgnoredDuringExecution: # 同节点亲和性配置
+    - labelSelector:
+        matchExpressions:
+        - key: app
+          operator: In
+          values:
+          - web
+      topologyKey: "kubernetes.io/hostname" #不同节点 # 根据节点标签

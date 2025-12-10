@@ -1,0 +1,38 @@
+# 10.statefulset-sc.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: webapp
+  labels:
+    app: webapp
+spec:
+  # serviceName: "nfs-sts-static"
+  replicas: 2
+  selector:
+    matchLabels:
+      app: webapp
+  template:
+    metadata:
+      labels:
+        app: webapp
+    spec:
+      containers:
+      - name: webapp-container
+        image: nginx:1.18
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: nginx-data-volume
+          mountPath: /test
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Delete # 删除
+  volumeClaimTemplates:
+  - metadata:
+      name: nginx-data-volume
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: "nfs-client"
+      resources:
+        requests:
+          storage: 1Gi
