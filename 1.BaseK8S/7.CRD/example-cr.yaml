@@ -1,0 +1,8 @@
+# example-cr.yaml
+apiVersion: example.com/v1
+kind: MyPod
+metadata:
+  name: my-pod
+spec:
+  foo: bar
+  bar: 123

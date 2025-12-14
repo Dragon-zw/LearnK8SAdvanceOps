@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-testrole-pod
+spec:
+  serviceAccountName: test-sa  # 指定自定义 ServiceAccount
+  containers:
+    - name: container
+      image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/nginx:1.29.3-linuxarm64

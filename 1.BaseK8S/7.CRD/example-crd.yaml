@@ -1,0 +1,31 @@
+# example-crd.yaml
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  # 具有固定格式
+  name: mypods.example.com
+spec:
+  group: example.com # 定义组名用于 REST API 中的定义：/apis/<group>/<version>
+  # 定义作用范围：Namespaced（命名空间级别）或者 Cluster（整个集群）
+  scope: Namespaced  # 定义资源的级别
+  names:
+    plural: mypods   # 复数
+    singular: mypod  # 单数
+    kind: MyPod      # 类型，是 sigular 的一个驼峰形式定义，在资源清单中会使用
+    shortNames:      # 缩写
+      - mp
+  versions:   	     # 版本
+    - name: v1		 # 版本名称
+      served: true   # 表示当前版本是否支持
+      storage: true  # 必须将一个且只有一个版本标记为存储版本（表示当前正在使用）
+      schema:		     # 整个资源类型的格式（定义自定义对象的声明规范）
+        openAPIV3Schema: # 顶层定义
+          type: object	 # 对象类型
+          properties:    # 属性
+            spec:
+              type: object
+              properties:
+                foo:
+                  type: string
+                bar:
+                  type: integer
