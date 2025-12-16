@@ -1,0 +1,12 @@
+apiVersion: webapp.ksoperator.kubesphere/v1
+kind: Guestbook
+metadata:
+  labels:
+    app.kubernetes.io/name: guestbook
+    app.kubernetes.io/managed-by: kustomize
+  name: guestbook-sample
+spec:
+  # TODO(user): Add fields here
+  configMapName: "test-cm"
+  size: 9
+  type: "Phone"
