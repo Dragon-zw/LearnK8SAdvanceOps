@@ -30,7 +30,7 @@ func initClient() (*kubernetes.Clientset, error) {
 	return clientset, nil
 }
 
-// 创建 Pod
+// 创建 Pod(类似于声明了 Yaml File)
 func createPod(clientset *kubernetes.Clientset) error {
 	// 需要找到对应 Resource 的 apiGroup 组
 	pod := &corev1.Pod{
@@ -46,8 +46,9 @@ func createPod(clientset *kubernetes.Clientset) error {
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
-					Name:  "nginx",
-					Image: "swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/nginx:1.29.3-linuxarm64",
+					Name: "nginx",
+					// Image: "swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/nginx:1.29.3-linuxarm64",
+					Image: "swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/nginx:1.29.3",
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          "http",
@@ -61,7 +62,7 @@ func createPod(clientset *kubernetes.Clientset) error {
 	}
 	// 相当于执行了
 	// kubectl run nginx-pod --image=swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/nginx:1.29.3-linuxarm64 \
-	// --labels app=nginx,env=test,version=v1
+	// --labels app=nginx,env=test,version=v1 -n default
 	ctx := context.Background()
 	_, err := clientset.CoreV1().Pods("default").Create(ctx, pod, metav1.CreateOptions{})
 	if err != nil {
