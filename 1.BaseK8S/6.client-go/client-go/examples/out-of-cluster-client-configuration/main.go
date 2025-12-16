@@ -83,6 +83,7 @@ func main() {
 			panic(err.Error())
 		} else {
 			fmt.Printf("Found pod %s in namespace %s\n", pod, namespace)
+			fmt.Printf("Pod Name: %s\n", pod)
 		}
 
 		time.Sleep(3 * time.Second)
