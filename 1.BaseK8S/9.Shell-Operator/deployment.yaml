@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shell-operator
+  namespace: example-monitor-namespaces
+  labels:
+    app: shell-operator
+spec:
+  template:
+    metadata:
+      labels:
+        app: shell-operator
+    spec:
+      containers:
+      - name: my-operator
+        image: dragonzw/my-operator:v1
+        imagePullPolicy: Always
+      serviceAccountName: monitor-namespaces-acc
+  selector:
+    matchLabels:
+      app: shell-operator
