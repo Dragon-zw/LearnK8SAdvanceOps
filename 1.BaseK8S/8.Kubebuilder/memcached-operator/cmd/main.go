@@ -38,6 +38,9 @@ import (
 	cachev1alpha1 "kubesphere.domain/memcached/api/v1alpha1"
 	"kubesphere.domain/memcached/internal/controller"
 	// +kubebuilder:scaffold:imports
+	// Package 后期的引入会在此处继续，引包的作用
+	// 脚手架的(驻点)埋点，后续继续要做什么事情，那么就会从 +kubebuilder:scaffold:imports 开始！
+	// cachev1alpha1 的 Package 是通过 api/v1alpha1 目录中创建的！
 )
 
 var (
@@ -50,6 +53,7 @@ func init() {
 
 	utilruntime.Must(cachev1alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
+	// 注册 GVK 的地方(Operator CRD)
 }
 
 // nolint:gocyclo
@@ -186,6 +190,7 @@ func main() {
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder
+	// 注册 Manager 的地方
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
