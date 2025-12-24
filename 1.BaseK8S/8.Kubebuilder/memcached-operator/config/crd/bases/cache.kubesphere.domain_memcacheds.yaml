@@ -11,10 +11,26 @@ spec:
     kind: Memcached
     listKind: MemcachedList
     plural: memcacheds
+    shortNames:
+    - mc
+    - mmc
     singular: memcached
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - description: The number of Memcached Replicas
+      jsonPath: .spec.size
+      name: Size
+      type: integer
+    - description: Namespace
+      jsonPath: .metadata.namespace
+      name: NAMESPACE
+      priority: 1
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: Memcached is the Schema for the memcacheds API

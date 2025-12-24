@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -32,6 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	cachev1alpha1 "kubesphere.domain/memcached/api/v1alpha1"
@@ -41,6 +43,9 @@ import (
 const (
 	// typeAvailableMemcached represents the status of the Deployment reconciliation
 	typeAvailableMemcached = "Available"
+	// memcachedFinalizer is the finalizer name
+	// memcachedFinalizer 用于 Memcached CRD 的删除操作
+	memcachedFinalizer = "cache.kubesphere.domain/finalizer"
 )
 
 // MemcachedReconciler reconciles a Memcached object
@@ -98,6 +103,31 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		log.Error(err, "Failed to get memcached")
 		return ctrl.Result{}, err
 		// 过一段时间会进行重试，重新触发 Reconcile
+	}
+
+	// 检查 Memecached 对象是否正在删除，GetDeletionTimestamp 已有的方法
+	// 如果这个(删除)时间戳存在(不为空)，说明对象正在删除
+	if memcached.GetDeletionTimestamp() != nil {
+		// 对象正在删除
+		return r.finalizeMemcached(ctx, memcached, log)
+	}
+
+	// 添加 Finalizer ，如果还没有
+	if !controllerutil.ContainsFinalizer(memcached, memcachedFinalizer) {
+		log.Info("Adding Finalizer for Memcached")
+		if ok := controllerutil.AddFinalizer(memcached, memcachedFinalizer); !ok {
+			log.Info("Finalizer already present")
+		}
+
+		// 更新 CR
+		err := r.Update(ctx, memcached)
+		if err != nil {
+			log.Error(err, "Failed to update Memcached with finalizer")
+			return ctrl.Result{}, err
+		}
+
+		// 重新排队以继续协调循环
+		return ctrl.Result{Requeue: true}, nil
 	}
 
 	// 需要判断是否已经初始化了
@@ -229,6 +259,59 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	// 没有错误，返回空(当前达到稳态)
+	return ctrl.Result{}, nil
+}
+
+// finalizeMemcached will perform the required operations before delete the CR.
+// finalizeMemcached 在删除 CR 之前执行必要的清理操作
+// finalizeMemcached 处理 Memcached 的删除逻辑
+func (r *MemcachedReconciler) finalizeMemcached(ctx context.Context, memcached *cachev1alpha1.Memcached, log logr.Logger) (ctrl.Result, error) {
+	// 检查是否包含我们的 Finalizer
+	if controllerutil.ContainsFinalizer(memcached, memcachedFinalizer) {
+		log.Info("Performing Finalizer Operations for Memcached before delete CR")
+
+		// 在这里添加清理逻辑
+
+		// 删除相关的 Deployment
+		deployment := &appsv1.Deployment{}
+		err := r.Get(ctx, types.NamespacedName{
+			Name:      memcached.Name,
+			Namespace: memcached.Namespace,
+		}, deployment)
+
+		if err == nil {
+			// Deployment 存在，删除它
+			log.Info("Deleting associated Deployment",
+				"Deployment.Namespace", deployment.Namespace,
+				"Deployment.Name", deployment.Name)
+
+			// 删除 Deployment
+			if err := r.Delete(ctx, deployment); err != nil && !apierrors.IsNotFound(err) {
+				log.Error(err, "Failed to delete Deployment")
+				return ctrl.Result{}, err
+			}
+
+			// 等待 Deployment 被删除
+			log.Info("Waiting for Deployment to be fully deleted")
+			return ctrl.Result{RequeueAfter: time.Second * 5}, nil
+		} else if !apierrors.IsNotFound(err) {
+			log.Error(err, "Failed to get Deployment during finalization")
+			return ctrl.Result{}, err
+		}
+
+		// 所有资源都已经清理，移除 Finalizer
+		log.Info("Removing finalizer for Memcached after successfully deleting all associated resources")
+		controllerutil.RemoveFinalizer(memcached, memcachedFinalizer)
+
+		// 更新 CR 以移除 Finalizer
+		if err := r.Update(ctx, memcached); err != nil {
+			log.Error(err, "Failed to remove finalizer for Memcached")
+			return ctrl.Result{}, err
+		}
+
+		log.Info("Finalizer removed successfully")
+	}
+
 	return ctrl.Result{}, nil
 }
 
