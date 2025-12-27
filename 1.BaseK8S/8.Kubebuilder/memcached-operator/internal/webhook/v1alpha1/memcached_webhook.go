@@ -20,8 +20,13 @@ import (
 	"context"
 	"fmt"
 
+	// 别名 包路径
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -36,7 +41,7 @@ var memcachedlog = logf.Log.WithName("memcached-resource")
 // SetupMemcachedWebhookWithManager registers the webhook for Memcached in the manager.
 func SetupMemcachedWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).For(&cachev1alpha1.Memcached{}).
-		WithValidator(&MemcachedCustomValidator{}).
+		WithValidator(&MemcachedCustomValidator{Client: mgr.GetClient()}).
 		WithDefaulter(&MemcachedCustomDefaulter{}).
 		Complete()
 }
@@ -72,7 +77,7 @@ func (d *MemcachedCustomDefaulter) Default(_ context.Context, obj runtime.Object
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 // NOTE: If you want to customise the 'path', use the flags '--defaulting-path' or '--validation-path'.
-// +kubebuilder:webhook:path=/validate-cache-kubesphere-domain-v1alpha1-memcached,mutating=false,failurePolicy=fail,sideEffects=None,groups=cache.kubesphere.domain,resources=memcacheds,verbs=create;update,versions=v1alpha1,name=vmemcached-v1alpha1.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/validate-cache-kubesphere-domain-v1alpha1-memcached,mutating=false,failurePolicy=fail,sideEffects=None,groups=cache.kubesphere.domain,resources=memcacheds,verbs=create;update;delete,versions=v1alpha1,name=vmemcached-v1alpha1.kb.io,admissionReviewVersions=v1
 
 // MemcachedCustomValidator struct is responsible for validating the Memcached resource
 // when it is created, updated, or deleted.
@@ -81,12 +86,15 @@ func (d *MemcachedCustomDefaulter) Default(_ context.Context, obj runtime.Object
 // as this struct is used only for temporary operations and does not need to be deeply copied.
 type MemcachedCustomValidator struct {
 	// TODO(user): Add more fields as needed for validation
+	client.Client
 }
 
 var _ webhook.CustomValidator = &MemcachedCustomValidator{}
 
 // ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type Memcached.
+// 返回值是 Warnings 警告信息，以及 Error
 func (v *MemcachedCustomValidator) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
+	// 因为 obj 可以断言成 CR 的结构体
 	memcached, ok := obj.(*cachev1alpha1.Memcached)
 	if !ok {
 		return nil, fmt.Errorf("expected a Memcached object but got %T", obj)
@@ -94,6 +102,15 @@ func (v *MemcachedCustomValidator) ValidateCreate(_ context.Context, obj runtime
 	memcachedlog.Info("Validation for Memcached upon creation", "name", memcached.GetName())
 
 	// TODO(user): fill in your validation logic upon object creation.
+	var allErrs field.ErrorList
+	// 判断 Size 是否为奇数，如果是奇数则直接报错
+	if *memcached.Spec.Size&1 == 1 {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("size"), memcached.Spec.Size, "must be an even number."))
+		return nil, apierrors.NewInvalid(
+			schema.GroupKind{Group: "cache.kubesphere.domain", Kind: "Memcached"},
+			memcached.Name, allErrs)
+	}
+	// 需要使用 List，因为用户定义字段有许多的报错，则可以更加方便的展示出用户定义字段错误的地方
 
 	return nil, nil
 }
@@ -107,6 +124,14 @@ func (v *MemcachedCustomValidator) ValidateUpdate(_ context.Context, oldObj, new
 	memcachedlog.Info("Validation for Memcached upon update", "name", memcached.GetName())
 
 	// TODO(user): fill in your validation logic upon object update.
+	var allErrs field.ErrorList
+	// 判断 Size 是否为奇数，如果是奇数则直接报错
+	if *memcached.Spec.Size&1 == 1 {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("size"), memcached.Spec.Size, "must be an even number."))
+		return nil, apierrors.NewInvalid(
+			schema.GroupKind{Group: "cache.kubesphere.domain", Kind: "Memcached"},
+			memcached.Name, allErrs)
+	}
 
 	return nil, nil
 }
@@ -120,6 +145,14 @@ func (v *MemcachedCustomValidator) ValidateDelete(ctx context.Context, obj runti
 	memcachedlog.Info("Validation for Memcached upon deletion", "name", memcached.GetName())
 
 	// TODO(user): fill in your validation logic upon object deletion.
+	var mcList cachev1alpha1.MemcachedList
+	// 构造 Error 报错信息
+	if err := v.List(ctx, &mcList, client.InNamespace(memcached.Namespace)); err != nil {
+		return nil, fmt.Errorf("Failed to list cronjob: %v", err)
+	}
+	if len(mcList.Items) == 1 {
+		return nil, fmt.Errorf("At least one instance must be retrained!")
+	}
 
 	return nil, nil
 }
