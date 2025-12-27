@@ -37,6 +37,7 @@ import (
 
 	cachev1alpha1 "kubesphere.domain/memcached/api/v1alpha1"
 	"kubesphere.domain/memcached/internal/controller"
+	webhookv1alpha1 "kubesphere.domain/memcached/internal/webhook/v1alpha1"
 	// +kubebuilder:scaffold:imports
 	// Package 后期的引入会在此处继续，引包的作用
 	// 脚手架的(驻点)埋点，后续继续要做什么事情，那么就会从 +kubebuilder:scaffold:imports 开始！
@@ -188,6 +189,13 @@ func main() {
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Memcached")
 		os.Exit(1)
+	}
+	// nolint:goconst
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err := webhookv1alpha1.SetupMemcachedWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Memcached")
+			os.Exit(1)
+		}
 	}
 	// +kubebuilder:scaffold:builder
 	// 注册 Manager 的地方
