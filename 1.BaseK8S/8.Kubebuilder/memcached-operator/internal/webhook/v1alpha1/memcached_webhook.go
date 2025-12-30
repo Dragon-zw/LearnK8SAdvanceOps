@@ -62,6 +62,7 @@ type MemcachedCustomDefaulter struct {
 var _ webhook.CustomDefaulter = &MemcachedCustomDefaulter{}
 
 // Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Memcached.
+// 当 CR 被创建的时候会触发 Default 的函数
 func (d *MemcachedCustomDefaulter) Default(_ context.Context, obj runtime.Object) error {
 	memcached, ok := obj.(*cachev1alpha1.Memcached)
 
@@ -71,7 +72,23 @@ func (d *MemcachedCustomDefaulter) Default(_ context.Context, obj runtime.Object
 	memcachedlog.Info("Defaulting for Memcached", "name", memcached.GetName())
 
 	// TODO(user): fill in your defaulting logic.
-
+	/*
+	if *memcached.Spec.Size&1 == 1{
+       *memcached.Spec.Size += 1
+	} 
+	*/
+    // 对所有的字段进行 判断空的 处理
+    if memcached.Spec.Size != nil && *memcached.Spec.Size&1 == 1 {
+		*memcached.Spec.Size += 1
+	}
+	// 确保 Label map 已经初始化
+	if memcached.Labels == nil {
+		memcached.Labels = make(map[string]string)
+	}
+	// 保证幂等性
+	if _, ok := memcached.Labels["status"]; !ok {
+		memcached.Labels["status"] = "ready"
+	}
 	return nil
 }
 
