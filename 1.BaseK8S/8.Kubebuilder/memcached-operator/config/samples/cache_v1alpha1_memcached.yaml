@@ -4,6 +4,7 @@ metadata:
   labels:
     app.kubernetes.io/name: memcached-operator
     app.kubernetes.io/managed-by: kustomize
+    webhook: enabled
   name: memcached-sample
   namespace: default
 spec:

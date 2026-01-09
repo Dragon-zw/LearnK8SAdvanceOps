@@ -1,0 +1,21 @@
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
+metadata:
+  name: rabbitmq-cluster
+  labels:
+    app: rabbitmq-cluster
+spec:
+  replicas: 3
+  image: ccr.ccs.tencentyun.com/course-share/rabbitmq:4.1
+  persistence:
+    storageClassName: managed-nfs-storage
+    storage: 5Gi
+  resources:
+    limits:
+      cpu: 1
+      memory: 500Mi
+    requests:
+      cpu: 100m
+      memory: 500Mi
+  service:
+    type: NodePort

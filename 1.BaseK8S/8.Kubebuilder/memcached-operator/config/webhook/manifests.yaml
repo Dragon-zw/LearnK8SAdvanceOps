@@ -24,6 +24,13 @@ webhooks:
     resources:
     - memcacheds
   sideEffects: None
+  # 筛选条件
+  objectSelector: # CR 需要匹配标签
+    matchLabels:
+      webhook: enabled
+  namespaceSelector: # NameSpace 需要匹配标签
+    matchLabels:
+      webhook-namespace: "true"
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
