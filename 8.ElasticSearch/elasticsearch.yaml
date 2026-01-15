@@ -1,0 +1,99 @@
+apiVersion: elasticsearch.k8s.elastic.co/v1
+# 资源类型为 Elasticsearch 集群
+kind: Elasticsearch
+# 元数据配置
+metadata:
+  # Elasticsearch 集群名称
+  name: es
+# 规格配置,定义集群的具体参数
+spec:
+  # Elasticsearch 版本号
+  version: 8.18.3
+  # 集群更新策略配置
+  updateStrategy:
+    # 变更预算,控制滚动更新时的 Pod 数量
+    changeBudget:
+      # 更新期间最多允许比期望副本数多1个Pod
+      maxSurge: 1
+      # 更新期间不允许有不可用的Pod,确保零停机
+      maxUnavailable: 0
+  # 节点组配置,定义不同类型的节点
+  nodeSets:
+    # 第一个节点组配置
+    - name: elasticsearch
+      # 节点数量,3个节点形成高可用集群
+      count: 3
+      # Elasticsearch 节点配置参数
+      config:
+        # 该节点可担任主节点角色,参与集群管理
+        # node.master: true
+        # 该节点可存储数据
+        # node.data: true
+        # 该节点可处理数据摄入管道
+        # node.ingest: true
+        # 禁用内存映射,在某些系统上提高稳定性
+        node.store.allow_mmap: false
+        # 自定义节点属性,可用于分片分配策略
+        node.attr.attr_name: attr_value
+        # 启用跨域资源共享(CORS)
+        http.cors.enabled: true
+        # 允许所有来源的跨域请求
+        http.cors.allow-origin: /.*/
+        # 允许的跨域请求头
+        http.cors.allow-headers: Authorization,X-Requested-With,Content-Length,Content-Type
+        # 禁用 HTTPS 安全传输(生产环境不建议)
+        xpack.security.http.ssl.enabled: false
+      # Pod 模板配置(在 nodeSet 内部)
+      podTemplate:
+        # Pod 元数据
+        metadata:
+          # Pod 标签,用于服务发现
+          labels:
+            app: elasticsearch
+        # Pod 规格
+        spec:
+          # 容器配置
+          containers:
+            # Elasticsearch 容器定义
+            - name: elasticsearch
+              # 环境变量配置
+              env:
+                # 就绪探针协议配置
+                - name: READINESS_PROBE_PROTOCOL
+                  value: "http"
+                # JVM 内存参数,初始和最大堆内存均为1GB
+                - name: ES_JAVA_OPTS
+                  value: "-Xms1g -Xmx1g"
+              # 使用的 Elasticsearch 镜像
+              image: docker.elastic.co/elasticsearch/elasticsearch:8.18.3
+              # 资源请求和限制配置
+              resources:
+                # 资源请求,调度时保证的最小资源
+                requests:
+                  # 请求2Gi内存
+                  memory: 2Gi
+                  # 请求10毫核CPU (0.01核心)
+                  cpu: 10m
+                # 资源限制,容器运行时的最大资源
+                limits:
+                  # 内存限制2GB
+                  memory: 2Gi
+                  # CPU限制2个核心
+                  cpu: 2
+      # 持久化存储配置(在 nodeSet 内部)
+      volumeClaimTemplates:
+        # 数据卷声明模板
+        - metadata:
+            # 存储卷名称
+            name: elasticsearch-data
+          spec:
+            # 访问模式,单节点读写
+            accessModes:
+              - ReadWriteOnce
+            # 存储资源请求
+            resources:
+              requests:
+                # 每个节点30GB存储空间
+                storage: 30Gi
+            # 存储类名称,使用NFS存储
+            storageClassName: managed-nfs-storage
