@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: spin-deck
+  namespace: spinnaker
+  annotations:
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - spinnaker.qikqiak.com
+    secretName: ali-tls  # 请确保创建对应的 TLS Secret
+  rules:
+  - host: spinnaker.qikqiak.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: spin-deck
+            port:
+              number: 9000

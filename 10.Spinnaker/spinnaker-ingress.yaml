@@ -1,0 +1,35 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: spin-deck
+  namespace: spinnaker
+  annotations:
+    # 强制 HTTPS 重定向
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    # SSL 协议版本
+    nginx.ingress.kubernetes.io/ssl-protocols: "TLSv1.2 TLSv1.3"
+    # 代理超时配置（可选）
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    # 请求体大小限制（可选）
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    # 后端协议（默认是 HTTP）
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+spec:
+  ingressClassName: nginx
+  # tls:
+  # - hosts:
+  #   - spinnaker.qikqiak.com
+  #   secretName: ali-tls
+  rules:
+  - host: spinnaker.qikqiak.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: spin-deck
+            port:
+              number: 9000
