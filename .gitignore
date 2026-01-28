@@ -1,4 +1,5 @@
 .idea/*
 .claude/*
-.cusor/*
+.cursor/*
+.agent/*
 .spec-workflow/*
